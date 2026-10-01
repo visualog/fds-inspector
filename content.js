@@ -490,6 +490,33 @@ function getKnownColorTokens(hex) {
   return [...new Set([...bridgeTokens, ...snapshotTokens, ...sourceTokens, ...builtInToken])];
 }
 
+function getKnownColorTokenEntries() {
+  const mergedColors = new Map();
+  const appendRegistry = (colors = {}) => {
+    Object.entries(colors).forEach(([hex, tokens]) => {
+      if (!Array.isArray(tokens) || !tokens.length) return;
+      const existing = mergedColors.get(hex) || [];
+      mergedColors.set(hex, [...new Set([...existing, ...tokens])]);
+    });
+  };
+
+  appendRegistry(bridgeColorTokenRegistry?.colors);
+  appendRegistry(snapshotColorTokenRegistry?.colors);
+  appendRegistry(activeTokenRegistry?.colors);
+  appendRegistry(Object.fromEntries(
+    Object.entries(FDS_SPECS.colors || {}).map(([hex, token]) => [hex, [token]]),
+  ));
+  return [...mergedColors.entries()].map(([hex, tokens]) => ({ hex, tokens }));
+}
+
+function getKnownColorForToken(token) {
+  const match = getKnownColorTokenEntries().find((entry) => (
+    /^#[0-9a-f]{6}$/i.test(entry.hex)
+    && entry.tokens.includes(token)
+  ));
+  return match ? match.hex.toLowerCase() : null;
+}
+
 function getActiveInspectorSpecs() {
   const activeOverrides = bridgeInspectorSpecOverrides || snapshotInspectorSpecOverrides;
   return {
@@ -507,6 +534,7 @@ function getActiveInspectorSpecs() {
 const { getSuggestedTokensForIssue } = createContentTokenSuggestions({
   getActiveInspectorSpecs,
   getKnownColorTokens,
+  getKnownColorTokenEntries,
   parseViolationItem,
 });
 const {
@@ -1893,13 +1921,17 @@ function getInspectorIssueDisplay(entry) {
   return { value, description: '위반 정보가 감지되었습니다.' };
 }
 
-function renderSuggestedTokenRows(tokens = []) {
-  return tokens.map((token) => `
-    <div class="fds-token-row">
-      <strong title="${escapeHtml(token)}">${escapeHtml(token)}</strong>
-      <button class="fds-token-copy" type="button" data-copy-token="${escapeHtml(token)}" data-state="idle" aria-label="${escapeHtml(`토큰명 복사: ${token}`)}" title="${escapeHtml(`토큰명 복사: ${token}`)}">${getLucideIconSvg('copy', 'fds-token-copy-icon')}</button>
-    </div>
-  `).join('');
+function renderSuggestedTokenRows(tokens = [], { showColorChips = false } = {}) {
+  return tokens.map((token) => {
+    const color = showColorChips ? getKnownColorForToken(token) : null;
+    return `
+      <div class="fds-token-row">
+        ${color ? `<span class="fds-token-color-chip" role="img" style="--fds-token-chip-color: ${escapeHtml(color)}" title="${escapeHtml(`${token}: ${color}`)}" aria-label="${escapeHtml(`${token} 색상 ${color}`)}"></span>` : ''}
+        <strong title="${escapeHtml(token)}">${escapeHtml(token)}</strong>
+        <button class="fds-token-copy" type="button" data-copy-token="${escapeHtml(token)}" data-state="idle" aria-label="${escapeHtml(`토큰명 복사: ${token}`)}" title="${escapeHtml(`토큰명 복사: ${token}`)}">${getLucideIconSvg('copy', 'fds-token-copy-icon')}</button>
+      </div>
+    `;
+  }).join('');
 }
 
 function getViolationNoteForEntry(entry) {
@@ -2038,7 +2070,7 @@ function showInspectorCardForEntries(target, issueEntries, anchorElement = targe
             ${suggestedTokens.length
               ? `<div class="fds-issue-replacement">
                   <span class="fds-issue-replacement-label">FDS 추천 토큰</span>
-                  ${renderSuggestedTokenRows(suggestedTokens)}
+                  ${renderSuggestedTokenRows(suggestedTokens, { showColorChips: entry?.category === 'color' })}
                 </div>`
               : ''}
           </div>

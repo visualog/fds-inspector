@@ -753,9 +753,12 @@ test('inspector hover card separates issue value from repeated violation type co
   assert.match(contentSource, /<strong class="fds-issue-value">\$\{escapeHtml\(issueDisplay\.value\)\}<\/strong>/);
   assert.match(contentSource, /<span class="fds-issue-description">\$\{escapeHtml\(issueDisplay\.description\)\}<\/span>/);
   assert.match(contentSource, /<span class="fds-issue-tip"><svg class="fds-issue-tip-icon" data-lucide="info"[\s\S]*<span>\$\{escapeHtml\(issueDisplay\.tip\)\}<\/span><\/span>/);
-  assert.match(contentSource, /function\s+renderSuggestedTokenRows\(tokens = \[\]\)/);
+  assert.match(contentSource, /function\s+getKnownColorForToken\(token\)/);
+  assert.match(contentSource, /function\s+renderSuggestedTokenRows\(tokens = \[\],\s*\{ showColorChips = false \} = \{\}\)/);
   assert.match(contentSource, /<span class="fds-issue-replacement-label">FDS 추천 토큰<\/span>/);
-  assert.match(contentSource, /tokens\.map\(\(token\) => `[\s\S]*<div class="fds-token-row">[\s\S]*data-copy-token="\$\{escapeHtml\(token\)\}"/);
+  assert.match(contentSource, /class="fds-token-color-chip"[\s\S]*role="img"[\s\S]*--fds-token-chip-color:\s*\$\{escapeHtml\(color\)\}[\s\S]*title="\$\{escapeHtml\(`\$\{token\}: \$\{color\}`\)\}"/);
+  assert.match(contentSource, /renderSuggestedTokenRows\(suggestedTokens,\s*\{ showColorChips:\s*entry\?\.category === 'color' \}\)/);
+  assert.match(contentSource, /tokens\.map\(\(token\) => \{[\s\S]*<div class="fds-token-row">[\s\S]*data-copy-token="\$\{escapeHtml\(token\)\}"/);
   assert.match(contentSource, /<button class="fds-token-copy"[\s\S]*data-lucide="\$\{escapeHtml\(name\)\}"/);
   assert.doesNotMatch(contentSource, />토큰명 복사<\/button>/);
   assert.doesNotMatch(contentSource, /<span>대체 토큰<\/span>/);
@@ -772,6 +775,8 @@ test('inspector hover card separates issue value from repeated violation type co
   assert.match(styleSource, /\.fds-issue-replacement\s*\{[\s\S]*flex-direction:\s*column/);
   assert.match(styleSource, /\.fds-issue-replacement-label\s*\{[\s\S]*font-size:\s*9px/);
   assert.match(styleSource, /\.fds-token-row\s*\{[\s\S]*align-items:\s*center/);
+  assert.match(styleSource, /\.fds-token-color-chip\s*\{[\s\S]*background-color:\s*var\(--fds-token-chip-color\)/);
+  assert.match(styleSource, /\.fds-token-color-chip\s*\{[\s\S]*border:\s*1px solid/);
   assert.doesNotMatch(styleSource, /\.fds-issue-replacement span\s*\{/);
   assert.match(styleSource, /\.fds-token-row strong\s*\{[\s\S]*flex:\s*1 1 auto/);
   assert.match(styleSource, /\.fds-token-copy\s*\{[\s\S]*width:\s*22px/);

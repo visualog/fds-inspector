@@ -2,6 +2,7 @@
   function createContentTokenSuggestions({
     getActiveInspectorSpecs,
     getKnownColorTokens,
+    getKnownColorTokenEntries = () => [],
     parseViolationItem,
   }) {
     function rankSuggestedTokens(tokens = []) {
@@ -81,6 +82,50 @@
       return rankedTokens.filter((token) => getColorPartFromTokenName(token) === null);
     }
 
+    function isSemanticColorToken(token) {
+      return /^Color[./]/i.test(String(token || '').trim());
+    }
+
+    function hexToOklab(hex) {
+      const match = String(hex || '').trim().match(/^#([0-9a-f]{6})$/i);
+      if (!match) return null;
+      const channels = [0, 2, 4].map((offset) => Number.parseInt(match[1].slice(offset, offset + 2), 16) / 255);
+      const [r, g, b] = channels.map((channel) => (
+        channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+      ));
+      const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+      const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+      const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+      return {
+        l: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+        a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+        b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+      };
+    }
+
+    function getNearestColorTokens(value, entry, parsed = {}) {
+      const target = hexToOklab(value);
+      if (!target) return [];
+      const candidates = getKnownColorTokenEntries()
+        .map((candidate) => {
+          const color = hexToOklab(candidate?.hex);
+          const semanticTokens = Array.isArray(candidate?.tokens)
+            ? candidate.tokens.filter(isSemanticColorToken)
+            : [];
+          const tokens = filterColorTokensForIssue(semanticTokens, entry, parsed);
+          if (!color || !tokens.length) return null;
+          return {
+            distance: Math.hypot(target.l - color.l, target.a - color.a, target.b - color.b),
+            tokens,
+          };
+        })
+        .filter(Boolean)
+        .filter((candidate) => candidate.distance <= 0.08)
+        .sort((a, b) => a.distance - b.distance);
+
+      return [...new Set(candidates.flatMap((candidate) => candidate.tokens))].slice(0, 3);
+    }
+
     function getSuggestedTokensForIssue(entry) {
       const message = String(entry?.message || '');
       const isRawValueIssue = message.includes('원시값 직접 사용');
@@ -90,7 +135,13 @@
       const parsed = parseViolationItem(message);
       const activeSpecs = getActiveInspectorSpecs();
       if (entry?.category === 'color') {
-        return filterColorTokensForIssue(getKnownColorTokens(parsed.value), entry, parsed).slice(0, 3);
+        const exactTokens = filterColorTokensForIssue(getKnownColorTokens(parsed.value), entry, parsed);
+        return (exactTokens.length > 0
+          ? exactTokens
+          : isUnregisteredIssue
+            ? getNearestColorTokens(parsed.value, entry, parsed)
+            : []
+        ).slice(0, 3);
       }
 
       if (entry?.category === 'spacing') {
@@ -125,6 +176,8 @@
       getNearestTokenNames,
       extractTokenNamesFromTag,
       filterColorTokensForIssue,
+      isSemanticColorToken,
+      getNearestColorTokens,
       getSuggestedTokensForIssue,
     };
   }

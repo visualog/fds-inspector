@@ -22,6 +22,19 @@ function createSuggestions(overrides = {}) {
         'Color/avatar/cool gray/text',
       ]
       : []),
+    getKnownColorTokenEntries: () => [
+      {
+        hex: '#717985',
+        tokens: [
+          'light/Gray/70',
+          '--color-text-secondary',
+          'text-secondary',
+          'Color/text/secondary',
+        ],
+      },
+      { hex: '#727a84', tokens: ['Color/bg/secondary'] },
+      { hex: '#252d38', tokens: ['Color/text/main'] },
+    ],
     parseViolationItem: (message) => {
       const [, , value = '', tag = ''] = String(message).match(/^(.*)\s+([^\s]+)\s+\(([^)]+)/) || [];
       return { tag, value };
@@ -178,15 +191,32 @@ test('token suggestions do not recommend a distant token as a similar replacemen
   );
 });
 
-test('token suggestions offer registered FDS color tokens for unregistered color values', () => {
+test('token suggestions offer the nearest role-compatible FDS token for unregistered colors', () => {
   const suggestions = createSuggestions();
 
   assert.deepEqual(
     suggestions.getSuggestedTokensForIssue({
       category: 'color',
       colorPart: 'text',
-      message: '글자색 #1a202c (미등록)',
+      message: '글자색 #707a86 (미등록)',
     }),
-    ['Color.text.primary', 'Color/avatar/cool gray/text'],
+    ['Color/text/secondary'],
+  );
+});
+
+test('token suggestions do not offer visually distant FDS colors as replacements', () => {
+  const suggestions = createSuggestions({
+    getKnownColorTokenEntries: () => [
+      { hex: '#ffffff', tokens: ['Color/text/inverse'] },
+    ],
+  });
+
+  assert.deepEqual(
+    suggestions.getSuggestedTokensForIssue({
+      category: 'color',
+      colorPart: 'text',
+      message: '글자색 #ff0000 (미등록)',
+    }),
+    [],
   );
 });

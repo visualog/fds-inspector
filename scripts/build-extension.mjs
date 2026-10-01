@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 export const BUILD_FILES = Object.freeze([
   'manifest.json',
+  'icons/icon-16.png',
+  'icons/icon-32.png',
+  'icons/icon-48.png',
+  'icons/icon-128.png',
   'background.js',
   'background-logic.js',
   'vendor/gsap.min.js',
