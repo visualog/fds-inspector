@@ -22,10 +22,14 @@
     });
   }
 
-  function visitCssRules(rules, visitor) {
+  function visitCssRules(rules, visitor, view = globalScope) {
     Array.from(rules || []).forEach((rule) => {
+      if (rule?.media?.mediaText && view?.matchMedia
+        && !view.matchMedia(rule.media.mediaText).matches) return;
+      if (rule?.constructor?.name === 'CSSSupportsRule' && view?.CSS?.supports
+        && !view.CSS.supports(rule.conditionText)) return;
       if (rule?.cssRules) {
-        visitCssRules(rule.cssRules, visitor);
+        visitCssRules(rule.cssRules, visitor, view);
       }
       visitor(rule);
     });
@@ -51,6 +55,9 @@
     let latestValue = '';
 
     Array.from(root?.styleSheets || []).forEach((sheet) => {
+      if (sheet.disabled) return;
+      if (sheet.media?.mediaText && root?.defaultView?.matchMedia
+        && !root.defaultView.matchMedia(sheet.media.mediaText).matches) return;
       let rules;
       try {
         rules = sheet.cssRules;
@@ -64,7 +71,7 @@
           const value = readDeclarationValue(rule.style, property).trim();
           if (value) latestValue = value;
         });
-      });
+      }, root?.defaultView || globalScope);
     });
 
     const inlineStyle = element.style;
