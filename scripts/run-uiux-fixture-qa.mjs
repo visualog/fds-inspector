@@ -12,6 +12,7 @@ const contentScripts = [
   'toolbar-state.js',
   'toolbar-drag.js',
   'style-token-detection.js',
+  'storybook-registry.js',
   'token-source.js',
   'bridge-token-source.js',
   'snapshot-token-source.js',

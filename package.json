@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build:extension": "node scripts/build-extension.mjs",
+    "sync:storybook": "node scripts/sync-storybook-registry.mjs",
     "check:all": "npm test",
     "test": "node --test",
     "qa:uiux": "node scripts/run-uiux-fixture-qa.mjs"

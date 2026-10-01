@@ -31,7 +31,22 @@
     });
   }
 
-  function hasAuthoredTokenReference(element, properties, root = globalScope.document) {
+  function normalizeTokenValue(value) {
+    const text = String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+    const rgb = text.match(/^rgba?\((\d+),(\d+),(\d+)(?:,1)?\)$/);
+    if (rgb) return `#${rgb.slice(1, 4).map(channel => Number(channel).toString(16).padStart(2, '0')).join('')}`;
+    return text.replace(/^#([a-f\d])([a-f\d])([a-f\d])$/, '#$1$1$2$2$3$3');
+  }
+
+  function isRegisteredTokenReference(value, variables, readVariable) {
+    const names = [...String(value || '').matchAll(/var\(\s*(--[\w-]+)/g)].map(match => match[1]);
+    return names.length > 0 && names.every(name => (
+      Object.hasOwn(variables, name)
+      && normalizeTokenValue(readVariable(name)) === normalizeTokenValue(variables[name])
+    ));
+  }
+
+  function hasAuthoredTokenReference(element, properties, root = globalScope.document, registry = null) {
     if (!element || !properties?.length) return false;
     let latestValue = '';
 
@@ -58,10 +73,13 @@
       if (value) latestValue = value;
     });
 
-    return isCssVariableReference(latestValue);
+    if (!registry) return isCssVariableReference(latestValue);
+    const styles = root?.defaultView?.getComputedStyle?.(element);
+    return isRegisteredTokenReference(latestValue, registry.variables || {},
+      name => styles?.getPropertyValue(name) || '');
   }
 
-  const api = { hasAuthoredTokenReference, isCssVariableReference };
+  const api = { hasAuthoredTokenReference, isCssVariableReference, isRegisteredTokenReference, normalizeTokenValue };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

@@ -17,7 +17,11 @@ const {
   computeToolbarDragPosition,
   shouldStartToolbarDrag: shouldStartToolbarDragByState,
 } = globalThis.FDSToolbarDrag;
-const { hasAuthoredTokenReference } = globalThis.FDSStyleTokenDetection;
+const { hasAuthoredTokenReference: detectAuthoredTokenReference } = globalThis.FDSStyleTokenDetection;
+const STORYBOOK_REGISTRY = globalThis.FDSStorybookRegistry;
+function hasAuthoredTokenReference(element, properties) {
+  return detectAuthoredTokenReference(element, properties, document, STORYBOOK_REGISTRY);
+}
 const { buildTokenRegistry } = globalThis.FDSTokenSource;
 const { escapeHtml } = globalThis.FDSHtmlUtils;
 const { createContentRenderers } = globalThis.FDSContentRender;
@@ -487,7 +491,10 @@ function getKnownColorTokens(hex) {
     ? snapshotColorTokenRegistry.colors[hex]
     : [];
   const builtInToken = FDS_SPECS.colors[hex] ? [FDS_SPECS.colors[hex]] : [];
-  return [...new Set([...bridgeTokens, ...snapshotTokens, ...sourceTokens, ...builtInToken])];
+  const storybookTokens = Object.entries(STORYBOOK_REGISTRY?.variables || {})
+    .filter(([name, value]) => name.startsWith('--color-') && value.toLowerCase() === hex.toLowerCase())
+    .map(([name]) => name);
+  return [...new Set([...bridgeTokens, ...snapshotTokens, ...sourceTokens, ...builtInToken, ...storybookTokens])];
 }
 
 function getKnownColorTokenEntries() {
@@ -503,6 +510,11 @@ function getKnownColorTokenEntries() {
   appendRegistry(bridgeColorTokenRegistry?.colors);
   appendRegistry(snapshotColorTokenRegistry?.colors);
   appendRegistry(activeTokenRegistry?.colors);
+  Object.entries(STORYBOOK_REGISTRY?.variables || {}).forEach(([name, value]) => {
+    if (name.startsWith('--color-') && /^#[0-9a-f]{6}$/i.test(value)) {
+      appendRegistry({ [value.toLowerCase()]: [name] });
+    }
+  });
   appendRegistry(Object.fromEntries(
     Object.entries(FDS_SPECS.colors || {}).map(([hex, token]) => [hex, [token]]),
   ));
@@ -519,6 +531,15 @@ function getKnownColorForToken(token) {
 
 function getActiveInspectorSpecs() {
   const activeOverrides = bridgeInspectorSpecOverrides || snapshotInspectorSpecOverrides;
+  const spacingTokens = { ...(activeOverrides?.spacingTokens || {}) };
+  const radiusTokens = { ...(activeOverrides?.radiusTokens || {}) };
+  Object.entries(STORYBOOK_REGISTRY?.variables || {}).forEach(([name, value]) => {
+    if (!/^\d+(?:\.\d+)?px$/.test(value)) return;
+    const map = name.startsWith('--spacing-') ? spacingTokens : name.startsWith('--radius-') ? radiusTokens : null;
+    if (!map) return;
+    const key = name.startsWith('--spacing-') ? Number.parseFloat(value) : value;
+    map[key] = [...new Set([...(map[key] || []), name])];
+  });
   return {
     ...FDS_SPECS,
     spacing: Array.isArray(activeOverrides?.spacing) && activeOverrides.spacing.length > 0
@@ -527,8 +548,8 @@ function getActiveInspectorSpecs() {
     radius: Array.isArray(activeOverrides?.radius) && activeOverrides.radius.length > 0
       ? activeOverrides.radius
       : FDS_SPECS.radius,
-    spacingTokens: activeOverrides?.spacingTokens || {},
-    radiusTokens: activeOverrides?.radiusTokens || {},
+    spacingTokens,
+    radiusTokens,
   };
 }
 const { getSuggestedTokensForIssue } = createContentTokenSuggestions({
@@ -1934,6 +1955,33 @@ function renderSuggestedTokenRows(tokens = [], { showColorChips = false } = {}) 
   }).join('');
 }
 
+function renderStorybookGuidance(entry, tokens = []) {
+  if (!STORYBOOK_REGISTRY) return '';
+  const category = entry?.category;
+  const title = category === 'color' ? 'Foundation/Colors/Semantic'
+    : category === 'spacing' ? 'Foundation/Spacing'
+      : category === 'font' ? 'Foundation/Typography' : null;
+  const url = title ? STORYBOOK_REGISTRY.docs[title] : null;
+  const parsed = parseViolationItem(String(entry?.message || ''));
+  const property = category === 'color'
+    ? entry.colorPart === 'bg' || parsed.chip === '배경색' ? 'background-color'
+      : entry.colorPart === 'border' || parsed.chip === '보더색' ? 'border-color' : 'color'
+    : category === 'radius' ? 'border-radius'
+      : category === 'spacing' ? /갭/.test(parsed.chip || '') ? 'gap'
+        : /마진/.test(parsed.chip || '') ? 'margin' : 'padding' : null;
+  const variables = tokens.filter(token => token.startsWith('--'));
+  const utilities = Object.entries(STORYBOOK_REGISTRY.utilities)
+    .filter(([, declarations]) => declarations[property]
+      && variables.some(name => declarations[property] === `var(${name})`))
+    .map(([name]) => name).slice(0, 3);
+  if (!url && !utilities.length) return '';
+  return `<div class="fds-issue-replacement">
+    ${utilities.length ? `<span class="fds-issue-replacement-label">FDS Tailwind 대안 · 적용 범위 확인</span>${renderSuggestedTokenRows(utilities)}` : ''}
+    ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">FDS Storybook 가이드 ↗</a>` : ''}
+    <span class="fds-issue-replacement-label">기준 수집: ${escapeHtml(STORYBOOK_REGISTRY.source.capturedAt.slice(0, 10))}</span>
+  </div>`;
+}
+
 function getViolationNoteForEntry(entry) {
   return violationNotesByKey.get(getViolationNoteKey(entry)) || null;
 }
@@ -2073,6 +2121,7 @@ function showInspectorCardForEntries(target, issueEntries, anchorElement = targe
                   ${renderSuggestedTokenRows(suggestedTokens, { showColorChips: entry?.category === 'color' })}
                 </div>`
               : ''}
+            ${renderStorybookGuidance(entry, suggestedTokens)}
           </div>
         `;
       }).join('')}
