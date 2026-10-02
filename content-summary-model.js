@@ -35,9 +35,14 @@
     }
 
     function getToneCountsForEntries(entries = []) {
+      const seen = { danger: new Set(), warning: new Set() };
       return entries.reduce((acc, entry) => {
-        if (entry.tone === 'danger') acc.danger += 1;
-        if (entry.tone === 'warning') acc.warning += 1;
+        const targets = seen[entry.tone];
+        const target = entry.element || entry;
+        if (targets && !targets.has(target)) {
+          targets.add(target);
+          acc[entry.tone] += 1;
+        }
         return acc;
       }, createToneCounts());
     }
@@ -78,6 +83,7 @@
         parsed.chip || '',
         parsed.value || '',
         parsed.tag || '',
+        ...(entry?.metadata?.assessment ? [entry.metadata.assessment.status, entry.metadata.assessment.reason || ''] : []),
       ].join('::');
     }
 
@@ -124,7 +130,9 @@
             key,
             tone: entry?.tone || parsed.tone || 'danger',
             chip: parsed.chip,
-            tag: parsed.tag,
+            tag: entry?.metadata?.assessment?.reason === 'fluid-layout' ? '유동 레이아웃 확인'
+              : entry?.metadata?.assessment?.reason === 'declaration-unavailable' ? 'CSS 선언 확인 필요'
+              : ({ mismatch: 'FDS 불일치 후보', recommendation: '토큰 전환 권장', review: '출처 확인 필요' })[entry?.metadata?.assessment?.status] || parsed.tag,
             value: parsed.value,
             entries: [],
           });

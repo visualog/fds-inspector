@@ -17,10 +17,13 @@ const {
   computeToolbarDragPosition,
   shouldStartToolbarDrag: shouldStartToolbarDragByState,
 } = globalThis.FDSToolbarDrag;
-const { hasAuthoredTokenReference: detectAuthoredTokenReference } = globalThis.FDSStyleTokenDetection;
+const { hasAuthoredTokenReference: detectAuthoredTokenReference, getAuthoredStyleValue } = globalThis.FDSStyleTokenDetection;
 const STORYBOOK_REGISTRY = globalThis.FDSStorybookRegistry;
+const PACKAGE_REGISTRY = globalThis.FDSPackageRegistry;
+const { createPackageInspectionRegistry, getPackageBaselineSummary, getComponentValueReferences } = globalThis.FDSPackageRegistryUtils;
+const INSPECTION_REGISTRY = createPackageInspectionRegistry(PACKAGE_REGISTRY, STORYBOOK_REGISTRY);
 function hasAuthoredTokenReference(element, properties) {
-  return detectAuthoredTokenReference(element, properties, document, STORYBOOK_REGISTRY);
+  return detectAuthoredTokenReference(element, properties, document, INSPECTION_REGISTRY);
 }
 const { buildTokenRegistry } = globalThis.FDSTokenSource;
 const { escapeHtml } = globalThis.FDSHtmlUtils;
@@ -42,7 +45,7 @@ const { createContentFloatingInspector } = globalThis.FDSContentFloatingInspecto
 const { createContentScanRunner } = globalThis.FDSContentScanRunner;
 const FDS_DESIGN_VARIABLES = globalThis.FDSDesignVariables;
 
-const FDS_BUILD = '2026-04-13-dev3';
+const FDS_BUILD = '2026-10-02-1.0.8';
 const BRIDGE_POLL_INTERVAL_MS = 3000;
 const BRIDGE_DISCONNECT_GRACE_SAMPLES = 3;
 const SUMMARY_PANEL_MIN_HEIGHT = 56;
@@ -74,8 +77,8 @@ const {
   renderSummaryEmptyState,
   renderSummaryTabBar,
   renderSummaryMetricCard,
-  renderSummaryGroupItem,
-  renderSummaryListItem,
+  renderSummaryIssueGroup,
+  renderAssessmentGuide,
   getIssueElementLabel,
 } = createContentRenderers({
   iconPaths: ICON_PATHS,
@@ -133,6 +136,7 @@ const { getInspectionForFilter } = createContentInspector({
   getActiveInspectorSpecs,
   getKnownColorTokens,
   hasAuthoredTokenReference,
+  getAuthoredStyleValue: (element, properties) => getAuthoredStyleValue(element, properties, document),
   hasDirectTextContent,
   rgbToHex,
 });
@@ -491,7 +495,7 @@ function getKnownColorTokens(hex) {
     ? snapshotColorTokenRegistry.colors[hex]
     : [];
   const builtInToken = FDS_SPECS.colors[hex] ? [FDS_SPECS.colors[hex]] : [];
-  const storybookTokens = Object.entries(STORYBOOK_REGISTRY?.variables || {})
+  const storybookTokens = Object.entries(INSPECTION_REGISTRY.variables)
     .filter(([name, value]) => name.startsWith('--color-') && value.toLowerCase() === hex.toLowerCase())
     .map(([name]) => name);
   return [...new Set([...bridgeTokens, ...snapshotTokens, ...sourceTokens, ...builtInToken, ...storybookTokens])];
@@ -510,7 +514,7 @@ function getKnownColorTokenEntries() {
   appendRegistry(bridgeColorTokenRegistry?.colors);
   appendRegistry(snapshotColorTokenRegistry?.colors);
   appendRegistry(activeTokenRegistry?.colors);
-  Object.entries(STORYBOOK_REGISTRY?.variables || {}).forEach(([name, value]) => {
+  Object.entries(INSPECTION_REGISTRY.variables).forEach(([name, value]) => {
     if (name.startsWith('--color-') && /^#[0-9a-f]{6}$/i.test(value)) {
       appendRegistry({ [value.toLowerCase()]: [name] });
     }
@@ -533,7 +537,7 @@ function getActiveInspectorSpecs() {
   const activeOverrides = bridgeInspectorSpecOverrides || snapshotInspectorSpecOverrides;
   const spacingTokens = { ...(activeOverrides?.spacingTokens || {}) };
   const radiusTokens = { ...(activeOverrides?.radiusTokens || {}) };
-  Object.entries(STORYBOOK_REGISTRY?.variables || {}).forEach(([name, value]) => {
+  Object.entries(INSPECTION_REGISTRY.variables).forEach(([name, value]) => {
     if (!/^\d+(?:\.\d+)?px$/.test(value)) return;
     const map = name.startsWith('--spacing-') ? spacingTokens : name.startsWith('--radius-') ? radiusTokens : null;
     if (!map) return;
@@ -748,7 +752,8 @@ function addIssueEntry({ category, message, element, metadata = null }) {
   if (!message) return null;
   const normalizedCategory = getIssueCategoryFromMessage(message, category);
   const colorPart = getIssueColorPart(message);
-  const tone = getIssueTone(message);
+  const assessmentStatus = metadata?.assessment?.status;
+  const tone = assessmentStatus ? (assessmentStatus === 'mismatch' ? 'danger' : 'warning') : getIssueTone(message);
   const signature = getElementIssueSignature(element);
   const key = `${normalizedCategory}|${colorPart || 'all'}|${message}|${signature}`;
   const existingEntry = scanData.issueEntries.find((entry) => entry.key === key);
@@ -1863,7 +1868,7 @@ function getInspectorCardTitle(issueEntries = []) {
   if (!issueEntries.length) return '위반 정보';
   if (issueEntries.length === 1) {
     const parsedIssue = parseViolationItem(issueEntries[0]?.message);
-    return `${parsedIssue.chip || '속성'} 위반`;
+    return `${parsedIssue.chip || '속성'} ${issueEntries[0]?.metadata?.assessment?.status === 'review' ? '확인' : '위반'}`;
   }
 
   const categories = new Set(issueEntries.map((entry) => entry?.category).filter(Boolean));
@@ -1912,6 +1917,24 @@ function getInspectorNoteEntries(issueEntries, representativeEntry) {
 function getInspectorIssueDisplay(entry) {
   const parsedIssue = parseViolationItem(entry?.message);
   const value = parsedIssue.value || entry?.message || '확인 필요';
+  const assessment = entry?.metadata?.assessment;
+  if (assessment) {
+    if (assessment.reason === 'fluid-layout') {
+      return { value, description: '유동 레이아웃에서 계산된 간격입니다. 고정 간격 토큰의 위반으로 판정하지 않습니다.',
+        tip: `적용 선언: ${assessment.authored} · 반응형 정렬 의도를 확인하세요. 고정 토큰으로 바꾸지 마세요.` };
+    }
+    if (assessment.reason === 'declaration-unavailable') {
+      return { value, description: '적용된 CSS 선언을 확인하지 못했습니다. 위반 판정과 수정값 추천을 보류합니다.',
+        tip: '자동 정렬 여부를 포함해 실제 CSS 선언을 확인하세요.' };
+    }
+    const descriptions = {
+      mismatch: 'FDS 불일치 후보입니다. 의도된 예외인지 확인하세요.',
+      recommendation: 'FDS 값과 일치합니다. 토큰 전환을 권장합니다.',
+      review: '작성 근거가 부족하거나 등록되지 않은 변수입니다. 위반으로 확정하지 않습니다.',
+    };
+    return { value, description: descriptions[assessment.status],
+      tip: '앱 코드와 공식 라이브러리의 소유 출처는 아직 확인되지 않았습니다.' };
+  }
   const suffix = String(parsedIssue.suffix || parsedIssue.tag || '').trim();
   const isColorIssue = entry?.category === 'color' || ['배경색', '글자색', '보더색'].includes(parsedIssue.chip);
   const hasAlpha = /^rgba\(.+,\s*(0?\.\d+|0)\s*\)$/i.test(value);
@@ -1970,14 +1993,16 @@ function renderStorybookGuidance(entry, tokens = []) {
       : category === 'spacing' ? /갭/.test(parsed.chip || '') ? 'gap'
         : /마진/.test(parsed.chip || '') ? 'margin' : 'padding' : null;
   const variables = tokens.filter(token => token.startsWith('--'));
-  const utilities = Object.entries(STORYBOOK_REGISTRY.utilities)
+  const packageReferences = getComponentValueReferences(PACKAGE_REGISTRY, category, entry?.message);
+  const utilities = Object.entries(INSPECTION_REGISTRY.utilities)
     .filter(([, declarations]) => declarations[property]
       && variables.some(name => declarations[property] === `var(${name})`))
     .map(([name]) => name).slice(0, 3);
-  if (!url && !utilities.length) return '';
+  if (!url && !utilities.length && !packageReferences.length) return '';
   return `<div class="fds-issue-replacement">
     ${utilities.length ? `<span class="fds-issue-replacement-label">FDS Tailwind 대안 · 적용 범위 확인</span>${renderSuggestedTokenRows(utilities)}` : ''}
     ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">FDS Storybook 가이드 ↗</a>` : ''}
+    ${packageReferences.length ? `<span class="fds-issue-replacement-label">공식 정의 참고 · 출처 증거/자동 면제 아님</span>${packageReferences.map(ref => `<span class="fds-issue-replacement-label">${escapeHtml(`${ref.component} ${ref.packageVersion} · ${ref.className}`)}</span>`).join('')}` : ''}
     <span class="fds-issue-replacement-label">기준 수집: ${escapeHtml(STORYBOOK_REGISTRY.source.capturedAt.slice(0, 10))}</span>
   </div>`;
 }
@@ -3681,6 +3706,10 @@ function refreshActiveScanBreakdown() {
   }, { missing: 0, primitiveRaw: 0 });
   if (activeFilter && scanData.counts && typeof scanData.counts[activeFilter] === 'number') {
     scanData.counts[activeFilter] = scanData.issueEntries.filter((entry) => entry.category === activeFilter).length;
+    if (scanData.affectedElementCounts) {
+      scanData.affectedElementCounts[activeFilter] = new Set(scanData.issueEntries
+        .filter(entry => entry.category === activeFilter).map(entry => entry.element)).size;
+    }
   }
 }
 
@@ -3766,7 +3795,7 @@ function hasCompletedScanForSummary() {
   const isPendingInitialSummaryScan = Boolean(activeFilter) && !hasCompletedScanForSummary();
   const isSummaryLoading = !scanErrorText && (isScanning || isPendingInitialSummaryScan);
   const hasViolations = activeIssueEntries.length > 0;
-  const summaryTitle = isIdle ? '검사 정보' : `${activeFilterLabel} 위반 정보`;
+  const summaryTitle = isIdle ? '검사 정보' : `${activeFilterLabel} 검사 결과`;
   const scanStatusMarkup = isScanning
     ? `<div class="fds-summary-loading" role="status" aria-live="polite">${escapeHtml(scanStatusText || getScanStatusMessage())}</div>`
     : scanErrorText
@@ -3778,6 +3807,7 @@ function hasCompletedScanForSummary() {
   const activeToneCounts = activeFilter === 'color'
     ? getColorToneCountsForActiveSubtab()
     : getToneCountsForEntries(activeIssueEntries);
+  const assessmentEntries = activeFilter === 'color' ? getColorEntriesForActiveSubtab() : activeIssueEntries;
   const activeTonePatternCounts = activeFilter === 'color'
     ? getColorTonePatternCountsForActiveSubtab()
     : getTonePatternCountsForGroups(groupIssueEntries(activeIssueEntries));
@@ -3809,14 +3839,8 @@ function hasCompletedScanForSummary() {
     : isIdle
     ? renderSummaryEmptyState({ isIdle: true })
     : visibleViolations.length > 0
-      ? visibleIssueGroups.map((group) => `
-          ${renderSummaryGroupItem(group)}
-          ${group.expanded
-            ? `<div class="fds-list-group-details" role="group" aria-label="${escapeHtml(`${group.chip} ${group.value} 상세 항목`)}">
-                ${(group.detailEntries || group.entries).map((item) => renderSummaryListItem(withViolationNoteState(item))).join('')}
-              </div>`
-            : ''}
-        `).join('')
+      ? visibleIssueGroups.map((group) => renderSummaryIssueGroup(group,
+          (group.detailEntries || group.entries).map(withViolationNoteState))).join('')
       : renderSummaryEmptyState({ activeFilterLabel });
   const summaryCards = isSummaryLoading
     ? []
@@ -3839,6 +3863,10 @@ function hasCompletedScanForSummary() {
       missingColorPatternCount,
       primitiveColorPatternCount,
       activeSummaryTone,
+      hasSourceReview: activeIssueEntries.some(entry => entry.metadata?.source?.status === 'review'),
+      assessmentMode: true,
+      recommendationCount: assessmentEntries.filter(entry => entry.metadata?.assessment?.status === 'recommendation').length,
+      reviewCount: assessmentEntries.filter(entry => entry.metadata?.assessment?.status === 'review').length,
     });
   const cardRowMarkup = summaryCards.map((card) => renderSummaryMetricCard(card)).join('');
   const tabBarMarkup = renderSummaryTabBar({
@@ -3853,10 +3881,11 @@ function hasCompletedScanForSummary() {
       <div class="fds-summary-card-row${!hasViolations || hasScanError ? ' is-single' : ''}">
         ${cardRowMarkup}
       </div>
-      <div class="fds-summary-list is-scrollable" role="list" aria-label="위반 목록">
+      <div class="fds-summary-list is-scrollable" role="list" aria-label="검토 대상 목록">
         ${listMarkup}
       </div>
     `;
+  const inspectionProvenance = `확장앱 ${chrome.runtime?.getManifest?.()?.version || '확인 불가'} · FDS 기준 ${PACKAGE_REGISTRY?.source?.capturedAt || STORYBOOK_REGISTRY?.source?.capturedAt || '확인 불가'}`;
 
   if (previousPanelHeight > 0) {
     panel.style.height = `${Math.max(previousPanelHeight, SUMMARY_PANEL_MIN_HEIGHT)}px`;
@@ -3874,7 +3903,18 @@ function hasCompletedScanForSummary() {
       </div>
     </div>
     <section class="fds-summary-section" aria-label="요약 및 탐색"${isSummaryLoading ? ' aria-busy="true"' : ''}>
+      <div class="fds-summary-provenance fds-issue-replacement-label" role="note">${escapeHtml(inspectionProvenance)}</div>
+      ${PACKAGE_REGISTRY ? `<details class="fds-package-baseline fds-issue-replacement-label">
+        <summary>패키지 검사 기준</summary>
+        <div>${escapeHtml(getPackageBaselineSummary(PACKAGE_REGISTRY))}</div>
+        <div>토큰 ${Object.keys(PACKAGE_REGISTRY.tokens.variables).length}개 · Button·Input 정적 정의 · 아이콘 ${PACKAGE_REGISTRY.icons.entries.length}개</div>
+        <div>FDS preset ${PACKAGE_REGISTRY.tokens.tailwind.mappedThemeSections?.length || 0}개 영역 · 기본 속성 매핑 ${Object.keys(PACKAGE_REGISTRY.tokens.tailwind.utilities || {}).length}개</div>
+        <div>미매핑 영역 ${PACKAGE_REGISTRY.tokens.tailwind.unmappedThemeSections?.length || 0}개 · 미해결 토큰 참조 ${PACKAGE_REGISTRY.tokens.tailwind.unresolvedTokenReferences?.length || 0}개</div>
+        <div>기본 속성 참고 매핑 · 반응형/상태/앱 설정은 실제 CSS로 확인</div>
+        <div>대표 아이콘 ${PACKAGE_REGISTRY.icons.metadataCoverage.length}개 크기·viewBox 참고 · 컴포넌트/아이콘 출처 자동 식별 없음</div>
+      </details>` : ''}
       ${scanStatusMarkup}
+      ${!isIdle && !isSummaryLoading && !hasScanError ? renderAssessmentGuide() : ''}
       ${summaryBodyMarkup}
     </section>
     <div class="fds-panel-resize-handle" role="separator" aria-label="패널 높이 조절" title="패널 높이 조절" tabindex="0"></div>

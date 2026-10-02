@@ -168,7 +168,7 @@ test('getToolbarVariantState keeps large badge counts numeric and preserves full
   assert.equal(state.color.badge, '2003');
   assert.equal(state.color.badgeCount, '2003');
   assert.equal(state.color.badgeFullCount, '2,003');
-  assert.equal(state.color.badgeLabel, '컬러 검사 2,003개 위반 요소');
+  assert.equal(state.color.badgeLabel, '컬러 검사 2,003개 검토 대상 요소');
 });
 
 test('getToolbarVariantState adds scan scope context to violation badge labels', () => {
@@ -189,7 +189,7 @@ test('getToolbarVariantState adds scan scope context to violation badge labels',
 
   assert.equal(
     state.color.badgeLabel,
-    '컬러 검사 154개 위반 요소 · 현재 렌더링 기준 · 검사됨 408개 · 제외됨 336개'
+    '컬러 검사 154개 검토 대상 요소 · 현재 렌더링 기준 · 검사됨 408개 · 제외됨 336개'
   );
 });
 

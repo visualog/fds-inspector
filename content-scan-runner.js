@@ -27,6 +27,7 @@
         suggestions: [],
         excludedEntries: [],
         counts: createEmptyCounts(filters),
+        affectedElementCounts: createEmptyCounts(filters),
         colorBreakdown: {
           missing: 0,
           primitiveRaw: 0,
@@ -73,6 +74,7 @@
           const issues = Array.isArray(inspection?.issues) ? inspection.issues : [];
           const issueDetails = Array.isArray(inspection?.issueDetails) ? inspection.issueDetails : [];
           const suggestions = Array.isArray(inspection?.suggestions) ? inspection.suggestions : [];
+          if (issues.length) scanData.affectedElementCounts[filterKey] += 1;
 
           if (!collectAllEntries && filterKey !== activeFilter) {
             scanData.counts[filterKey] += issues.length;

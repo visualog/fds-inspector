@@ -154,10 +154,13 @@
   }
 
   function getParsedViolation(entry, parseViolationItem) {
-    if (typeof parseViolationItem !== 'function') return getFallbackParsedViolation(entry);
+    const assessmentTag = entry.metadata?.assessment?.reason === 'fluid-layout' ? '유동 레이아웃 확인'
+      : entry.metadata?.assessment?.reason === 'declaration-unavailable' ? 'CSS 선언 확인 필요'
+      : ({ mismatch: 'FDS 불일치 후보', recommendation: '토큰 전환 권장', review: '출처 확인 필요' })[entry.metadata?.assessment?.status];
     return {
       ...getFallbackParsedViolation(entry),
-      ...parseViolationItem(entry.message),
+      ...(typeof parseViolationItem === 'function' ? parseViolationItem(entry.message) : {}),
+      ...(assessmentTag ? { tag: assessmentTag } : {}),
     };
   }
 

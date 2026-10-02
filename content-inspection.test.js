@@ -95,7 +95,7 @@ test('spacing inspection includes gap values outside the token scale', () => {
   }, {});
 
   assert.deepEqual(result.issues, ['갭 11px (미등록)']);
-  assert.deepEqual(result.issueDetails, [
+  assert.deepEqual(result.issueDetails.map(({ spacing }) => ({ spacing })), [
     { spacing: { kind: 'gap', sides: ['row', 'column'], value: 11 } },
   ]);
 });
@@ -111,7 +111,7 @@ test('spacing inspection labels directional gap values when row and column diffe
     '행 갭 12px (미등록)',
     '열 갭 8px (원시값 직접 사용: spacing/8)',
   ]);
-  assert.deepEqual(result.issueDetails, [
+  assert.deepEqual(result.issueDetails.map(({ spacing }) => ({ spacing })), [
     { spacing: { kind: 'gap', sides: ['row'], value: 12 } },
     { spacing: { kind: 'gap', sides: ['column'], value: 8 } },
   ]);

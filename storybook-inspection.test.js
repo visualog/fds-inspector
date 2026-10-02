@@ -36,3 +36,11 @@ test('registry extraction rejects a non-FDS payload and excludes pseudo utility 
   const result = extractRegistry(css, { entries: { docs: { type: 'docs', title: 'Foundation/Colors/Semantic', id: 'colors--docs' } } }, 'https://example.test', 'styles.css');
   assert.deepEqual(Object.keys(result.utilities), ['p-2']);
 });
+
+test('registry extraction preserves escaped decimal FDS spacing names and utilities', async () => {
+  const { extractRegistry } = await import('./scripts/sync-storybook-registry.mjs');
+  const css = `:root{${Array.from({ length: 11 }, (_, i) => `--spacing-${i}:${i}px`).join(';')};--spacing-2\\.5:10px}.py-2\\.5{padding-block:var(--spacing-2\\.5)}`;
+  const result = extractRegistry(css, { entries: { docs: { type: 'docs', title: 'Foundation/Colors/Semantic', id: 'colors--docs' } } }, 'https://example.test', 'styles.css');
+  assert.equal(result.variables['--spacing-2.5'], '10px');
+  assert.equal(result.utilities['py-2.5']['padding-block'], 'var(--spacing-2\\.5)');
+});

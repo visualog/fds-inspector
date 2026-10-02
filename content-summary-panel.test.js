@@ -1,4 +1,10 @@
 const test = require('node:test');
+test('summary displays installed extension version and FDS registry capture time', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, 'content.js'), 'utf8');
+  require('node:assert/strict').match(source, /getManifest\?\.\(\)/);
+  require('node:assert/strict').match(source, /fds-summary-provenance/);
+  require('node:assert/strict').match(source, /FDS 기준.*capturedAt/);
+});
 const assert = require('node:assert/strict');
 
 const { createContentSummaryPanel } = require('./content-summary-panel.js');

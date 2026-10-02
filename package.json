@@ -1,10 +1,11 @@
 {
   "name": "fds-inspector",
-  "version": "1.0.1",
+  "version": "1.0.8",
   "private": true,
   "scripts": {
     "build:extension": "node scripts/build-extension.mjs",
     "sync:storybook": "node scripts/sync-storybook-registry.mjs",
+    "sync:packages": "node scripts/sync-package-registry.mjs",
     "check:all": "npm test",
     "test": "node --test",
     "qa:uiux": "node scripts/run-uiux-fixture-qa.mjs"

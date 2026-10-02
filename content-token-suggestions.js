@@ -127,6 +127,7 @@
     }
 
     function getSuggestedTokensForIssue(entry) {
+      if (entry?.category === 'spacing' && entry?.metadata?.assessment?.status === 'review') return [];
       const message = String(entry?.message || '');
       const isRawValueIssue = message.includes('원시값 직접 사용');
       const isUnregisteredIssue = message.includes('미등록');

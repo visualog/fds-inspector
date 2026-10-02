@@ -4,7 +4,7 @@
   "source": {
     "baseUrl": "http://192.168.100.108:6006",
     "cssUrl": "http://192.168.100.108:6006/assets/iframe-Dah_SyAM.css",
-    "capturedAt": "2026-10-01T23:31:33.518Z",
+    "capturedAt": "2026-10-02T01:21:43.235Z",
     "sha256": "4a72dada351579fa115e718396d957aecee83de7517e4fd61c6ff8de44973b25"
   },
   "variables": {
@@ -251,8 +251,11 @@
     "--typography-caption-2-bold-line-height": ".75rem",
     "--typography-caption-2-bold-weight": "700",
     "--spacing-0": "0px",
+    "--spacing-0.5": "2px",
     "--spacing-1": "4px",
+    "--spacing-1.5": "6px",
     "--spacing-2": "8px",
+    "--spacing-2.5": "10px",
     "--spacing-3": "12px",
     "--spacing-4": "16px",
     "--spacing-5": "20px",
@@ -283,6 +286,9 @@
     "-top-0": {
       "top": "calc(var(--spacing-0) * -1)"
     },
+    "-top-0.5": {
+      "top": "calc(var(--spacing-0\\.5) * -1)"
+    },
     "-top-1": {
       "top": "calc(var(--spacing-1) * -1)"
     },
@@ -292,17 +298,29 @@
     "top-1": {
       "top": "var(--spacing-1)"
     },
+    "top-1.5": {
+      "top": "var(--spacing-1\\.5)"
+    },
     "top-2": {
       "top": "var(--spacing-2)"
     },
+    "top-2.5": {
+      "top": "var(--spacing-2\\.5)"
+    },
     "top-3": {
       "top": "var(--spacing-3)"
+    },
+    "-right-0.5": {
+      "right": "calc(var(--spacing-0\\.5) * -1)"
     },
     "-right-1": {
       "right": "calc(var(--spacing-1) * -1)"
     },
     "right-0": {
       "right": "var(--spacing-0)"
+    },
+    "right-0.5": {
+      "right": "var(--spacing-0\\.5)"
     },
     "right-1": {
       "right": "var(--spacing-1)"
@@ -315,6 +333,9 @@
     },
     "right-7": {
       "right": "var(--spacing-7)"
+    },
+    "-bottom-0.5": {
+      "bottom": "calc(var(--spacing-0\\.5) * -1)"
     },
     "-bottom-1": {
       "bottom": "calc(var(--spacing-1) * -1)"
@@ -334,11 +355,20 @@
     "m-0": {
       "margin": "var(--spacing-0)"
     },
+    "m-0.5": {
+      "margin": "var(--spacing-0\\.5)"
+    },
     "m-1": {
       "margin": "var(--spacing-1)"
     },
+    "m-1.5": {
+      "margin": "var(--spacing-1\\.5)"
+    },
     "m-2": {
       "margin": "var(--spacing-2)"
+    },
+    "m-2.5": {
+      "margin": "var(--spacing-2\\.5)"
     },
     "m-3": {
       "margin": "var(--spacing-3)"
@@ -388,6 +418,9 @@
     "my-1": {
       "margin-block": "var(--spacing-1)"
     },
+    "my-2.5": {
+      "margin-block": "var(--spacing-2\\.5)"
+    },
     "my-3": {
       "margin-block": "var(--spacing-3)"
     },
@@ -397,8 +430,14 @@
     "mt-0": {
       "margin-top": "var(--spacing-0)"
     },
+    "mt-0.5": {
+      "margin-top": "var(--spacing-0\\.5)"
+    },
     "mt-1": {
       "margin-top": "var(--spacing-1)"
+    },
+    "mt-1.5": {
+      "margin-top": "var(--spacing-1\\.5)"
     },
     "mt-2": {
       "margin-top": "var(--spacing-2)"
@@ -430,11 +469,31 @@
     "mb-4": {
       "margin-bottom": "var(--spacing-4)"
     },
+    "-ml-0.5": {
+      "margin-left": "calc(var(--spacing-0\\.5) * -1)"
+    },
+    "-ml-1.5": {
+      "margin-left": "calc(var(--spacing-1\\.5) * -1)"
+    },
+    "ml-0.5": {
+      "margin-left": "var(--spacing-0\\.5)"
+    },
     "ml-1": {
       "margin-left": "var(--spacing-1)"
     },
+    "ml-1.5": {
+      "margin-left": "var(--spacing-1\\.5)"
+    },
     "ml-3": {
       "margin-left": "var(--spacing-3)"
+    },
+    "size-1.5": {
+      "width": "var(--spacing-1\\.5)",
+      "height": "var(--spacing-1\\.5)"
+    },
+    "size-2.5": {
+      "width": "var(--spacing-2\\.5)",
+      "height": "var(--spacing-2\\.5)"
     },
     "size-3": {
       "width": "var(--spacing-3)",
@@ -472,8 +531,14 @@
       "width": "var(--spacing-16)",
       "height": "var(--spacing-16)"
     },
+    "h-0.5": {
+      "height": "var(--spacing-0\\.5)"
+    },
     "h-1": {
       "height": "var(--spacing-1)"
+    },
+    "h-1.5": {
+      "height": "var(--spacing-1\\.5)"
     },
     "h-2": {
       "height": "var(--spacing-2)"
@@ -508,17 +573,29 @@
     "h-16": {
       "height": "var(--spacing-16)"
     },
+    "!min-h-0": {
+      "min-height": "var(--spacing-0)!important"
+    },
     "min-h-0": {
       "min-height": "var(--spacing-0)"
     },
     "w-0": {
       "width": "var(--spacing-0)"
     },
+    "w-0.5": {
+      "width": "var(--spacing-0\\.5)"
+    },
     "w-1": {
       "width": "var(--spacing-1)"
     },
+    "w-1.5": {
+      "width": "var(--spacing-1\\.5)"
+    },
     "w-2": {
       "width": "var(--spacing-2)"
+    },
+    "w-2.5": {
+      "width": "var(--spacing-2\\.5)"
     },
     "w-3": {
       "width": "var(--spacing-3)"
@@ -559,6 +636,9 @@
     "max-w-0": {
       "max-width": "var(--spacing-0)"
     },
+    "!min-w-0": {
+      "min-width": "var(--spacing-0)!important"
+    },
     "min-w-0": {
       "min-width": "var(--spacing-0)"
     },
@@ -587,11 +667,20 @@
     "gap-0": {
       "gap": "var(--spacing-0)"
     },
+    "gap-0.5": {
+      "gap": "var(--spacing-0\\.5)"
+    },
     "gap-1": {
       "gap": "var(--spacing-1)"
     },
+    "gap-1.5": {
+      "gap": "var(--spacing-1\\.5)"
+    },
     "gap-2": {
       "gap": "var(--spacing-2)"
+    },
+    "gap-2.5": {
+      "gap": "var(--spacing-2\\.5)"
     },
     "gap-3": {
       "gap": "var(--spacing-3)"
@@ -668,6 +757,12 @@
     "border-t-interactive-brand": {
       "border-top-color": "var(--color-bg-interactive-brand)"
     },
+    "bg-[var(--color-bg-interactive-error-disabled)]": {
+      "background-color": "var(--color-bg-interactive-error-disabled)"
+    },
+    "bg-[var(--color-bg-interactive-toggle-off)]": {
+      "background-color": "var(--color-bg-interactive-toggle-off)"
+    },
     "bg-avatar-green-bg-bold": {
       "background-color": "var(--color-avatar-green-bg-bold)"
     },
@@ -682,6 +777,9 @@
     },
     "bg-avatar-red-bg-bold": {
       "background-color": "var(--color-avatar-red-bg-bold)"
+    },
+    "bg-bg-brand/30": {
+      "background-color": "color-mix(in oklab,var(--color-bg-brand) 30%,transparent)"
     },
     "bg-bg-error": {
       "background-color": "var(--color-bg-error)"
@@ -716,11 +814,20 @@
     "bg-bg-loading": {
       "background-color": "var(--color-bg-loading)"
     },
+    "bg-bg-primary/90": {
+      "background-color": "color-mix(in oklab,var(--color-bg-primary) 90%,transparent)"
+    },
     "bg-bg-secondary": {
       "background-color": "var(--color-bg-secondary)"
     },
     "bg-bg-skeleton-default-from": {
       "background-color": "var(--color-bg-skeleton-default-from)"
+    },
+    "bg-bg-strong/50": {
+      "background-color": "color-mix(in oklab,var(--color-bg-strong) 50%,transparent)"
+    },
+    "bg-bg-strong/80": {
+      "background-color": "color-mix(in oklab,var(--color-bg-strong) 80%,transparent)"
     },
     "bg-bg-success": {
       "background-color": "var(--color-bg-success)"
@@ -779,14 +886,26 @@
     "fill-bg-tooltip": {
       "fill": "var(--color-bg-tooltip)"
     },
+    "stroke-(--color-border-interactive-input)": {
+      "stroke": "var(--color-border-interactive-input)"
+    },
     "p-0": {
       "padding": "var(--spacing-0)"
+    },
+    "p-0.5": {
+      "padding": "var(--spacing-0\\.5)"
     },
     "p-1": {
       "padding": "var(--spacing-1)"
     },
+    "p-1.5": {
+      "padding": "var(--spacing-1\\.5)"
+    },
     "p-2": {
       "padding": "var(--spacing-2)"
+    },
+    "p-2.5": {
+      "padding": "var(--spacing-2\\.5)"
     },
     "p-3": {
       "padding": "var(--spacing-3)"
@@ -827,8 +946,14 @@
     "px-0": {
       "padding-inline": "var(--spacing-0)"
     },
+    "px-0.5": {
+      "padding-inline": "var(--spacing-0\\.5)"
+    },
     "px-1": {
       "padding-inline": "var(--spacing-1)"
+    },
+    "px-1.5": {
+      "padding-inline": "var(--spacing-1\\.5)"
     },
     "px-2": {
       "padding-inline": "var(--spacing-2)"
@@ -851,14 +976,26 @@
     "px-8": {
       "padding-inline": "var(--spacing-8)"
     },
+    "!py-0": {
+      "padding-block": "var(--spacing-0)!important"
+    },
     "py-0": {
       "padding-block": "var(--spacing-0)"
+    },
+    "py-0.5": {
+      "padding-block": "var(--spacing-0\\.5)"
     },
     "py-1": {
       "padding-block": "var(--spacing-1)"
     },
+    "py-1.5": {
+      "padding-block": "var(--spacing-1\\.5)"
+    },
     "py-2": {
       "padding-block": "var(--spacing-2)"
+    },
+    "py-2.5": {
+      "padding-block": "var(--spacing-2\\.5)"
     },
     "py-3": {
       "padding-block": "var(--spacing-3)"
@@ -881,6 +1018,12 @@
     "pt-1": {
       "padding-top": "var(--spacing-1)"
     },
+    "pt-1.5": {
+      "padding-top": "var(--spacing-1\\.5)"
+    },
+    "pt-2.5": {
+      "padding-top": "var(--spacing-2\\.5)"
+    },
     "pt-3": {
       "padding-top": "var(--spacing-3)"
     },
@@ -896,8 +1039,14 @@
     "pt-7": {
       "padding-top": "var(--spacing-7)"
     },
+    "pr-1.5": {
+      "padding-right": "var(--spacing-1\\.5)"
+    },
     "pr-2": {
       "padding-right": "var(--spacing-2)"
+    },
+    "pr-2.5": {
+      "padding-right": "var(--spacing-2\\.5)"
     },
     "pr-3": {
       "padding-right": "var(--spacing-3)"
@@ -917,8 +1066,14 @@
     "pb-1": {
       "padding-bottom": "var(--spacing-1)"
     },
+    "pb-1.5": {
+      "padding-bottom": "var(--spacing-1\\.5)"
+    },
     "pb-2": {
       "padding-bottom": "var(--spacing-2)"
+    },
+    "pb-2.5": {
+      "padding-bottom": "var(--spacing-2\\.5)"
     },
     "pb-3": {
       "padding-bottom": "var(--spacing-3)"
@@ -1135,6 +1290,24 @@
     },
     "ring-border-interactive-selected": {
       "--tw-ring-color": "var(--color-border-interactive-selected)"
+    },
+    "[--action-overlay-bg:linear-gradient(270deg,var(--color-bg-interactive-secondary-hover)_91.83%,rgba(233,236,239,0)_100%)]": {
+      "--action-overlay-bg": "linear-gradient(270deg,var(--color-bg-interactive-secondary-hover) 91.83%,#e9ecef00 100%)"
+    },
+    "[--action-overlay-bg:linear-gradient(270deg,var(--color-bg-interactive-selected)_91.83%,rgba(233,236,239,0)_100%)]": {
+      "--action-overlay-bg": "linear-gradient(270deg,var(--color-bg-interactive-selected) 91.83%,#e9ecef00 100%)"
+    },
+    "[--cell-size:var(--spacing-10)]": {
+      "--cell-size": "var(--spacing-10)"
+    },
+    "[--skeleton-shimmer-color:var(--color-bg-skeleton-brand-to)]": {
+      "--skeleton-shimmer-color": "var(--color-bg-skeleton-brand-to)"
+    },
+    "[--skeleton-shimmer-color:var(--color-bg-skeleton-default-from)]": {
+      "--skeleton-shimmer-color": "var(--color-bg-skeleton-default-from)"
+    },
+    "md:p-8": {
+      "padding": "var(--spacing-8)"
     }
   },
   "docs": {

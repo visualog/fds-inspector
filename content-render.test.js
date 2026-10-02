@@ -12,6 +12,24 @@ const renderers = createContentRenderers({
   getUrl: (path) => `chrome-extension://id/${path}`,
 });
 
+test('assessment guide explains recommendation and review without asking for blanket replacement', () => {
+  const markup = renderers.renderAssessmentGuide();
+  assert.match(markup, /<details class="fds-assessment-guide">/);
+  assert.match(markup, /<summary>검사 결과 안내<\/summary>/);
+  assert.match(markup, /토큰 전환 권장/);
+  assert.match(markup, /FDS에 있는 값을 직접 지정한 것으로 확인/);
+  assert.match(markup, /출처 확인 필요/);
+  assert.match(markup, /변수·계산식 등의 적용 방식을 아직 확정하지 못함/);
+  assert.match(markup, /바로 토큰으로 바꾸라는 뜻은 아닙니다/);
+});
+
+test('source-review radius results are not labeled as raw-value-only summary results', () => {
+  const cards = renderers.createSummaryMetricCards({ hasViolations: true, activeFilter: 'radius',
+    missingColorCount: 0, primitiveColorCount: 1, missingColorPatternCount: 0,
+    primitiveColorPatternCount: 1, activeSummaryTone: 'warning', hasSourceReview: true });
+  assert.equal(cards[1].label, '토큰 검토');
+});
+
 test('renderToolbarMarkup preserves toolbar item order and escapes dynamic text', () => {
   const markup = renderers.renderToolbarMarkup({
     items: [
@@ -223,7 +241,7 @@ test('renderSummaryGroupItem summarizes and escapes grouped issues', () => {
   assert.match(markup, /data-group-key="group&lt;1&gt;"/);
   assert.match(markup, /aria-expanded="true"/);
   assert.match(markup, /data-lucide="chevron-down"/);
-  assert.doesNotMatch(markup, /fds-group-chip/);
+  assert.match(markup, /class="fds-group-chip">글자색/);
   assert.doesNotMatch(markup, /fds-group-status/);
   assert.match(markup, /12개 요소/);
   assert.match(markup, /data-tooltip="목록 접기"/);
@@ -234,7 +252,7 @@ test('renderSummaryGroupItem summarizes and escapes grouped issues', () => {
   assert.match(markup, /#252d38/);
 });
 
-test('renderSummaryGroupItem keeps visible group rows focused on value and count', () => {
+test('renderSummaryGroupItem distinguishes property and value in visible rows', () => {
   const markup = renderers.renderSummaryGroupItem({
     key: 'spacing-right',
     tone: 'danger',
@@ -245,12 +263,31 @@ test('renderSummaryGroupItem keeps visible group rows focused on value and count
   });
 
   assert.match(markup, /data-tooltip="목록 펼치기"/);
-  assert.match(markup, /<span class="fds-group-value">14px<\/span>/);
+  assert.match(markup, /class="fds-group-number">14px<\/span>/);
   assert.match(markup, /<span class="fds-group-count" aria-label="1개 요소">1<\/span>/);
   assert.match(markup, /data-lucide="chevron-right"/);
   assert.doesNotMatch(markup, /data-lucide="chevron-down"/);
-  assert.doesNotMatch(markup, /fds-group-chip/);
+  assert.match(markup, /class="fds-group-chip">오른쪽 패딩/);
   assert.doesNotMatch(markup, /fds-group-status/);
+});
+
+test('expanded issue groups contain their children and link the header to details', () => {
+  const markup = renderers.renderSummaryIssueGroup({ key: 'top<10>', chip: '상단 패딩', value: '10px',
+    tag: '토큰 전환 권장', count: 3, tone: 'warning', expanded: true,
+    entries: [{ metadata: { assessment: { status: 'recommendation' } } }] }, [
+    { key: 'a1', message: '상단 패딩 10px (원시값 직접 사용)', elementLabel: 'a.inline-flex', elementCount: 2 },
+  ]);
+  assert.match(markup, /class="fds-issue-group is-expanded"/);
+  assert.match(markup, /id="fds-group-top%3C10%3E"/);
+  assert.match(markup, /aria-controls="fds-group-top%3C10%3E-details"/);
+  assert.match(markup, /aria-labelledby="fds-group-top%3C10%3E"/);
+  assert.match(markup, /a\.inline-flex · 2개 요소/);
+  assert.match(markup, /class="fds-group-chip">상단 패딩/);
+});
+
+test('collapsed issue groups do not expose child details or dangling controls', () => {
+  const markup = renderers.renderSummaryIssueGroup({ key: 'x', expanded: false }, [{ message: '패딩 10px' }]);
+  assert.doesNotMatch(markup, /fds-list-group-details|aria-controls=/);
 });
 
 test('formatTokenContextLabel identifies token counts as token counts', () => {

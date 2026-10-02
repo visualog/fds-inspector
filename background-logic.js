@@ -5,6 +5,8 @@
     'toolbar-drag.js',
     'style-token-detection.js',
     'storybook-registry.js',
+    'fds-package-registry.js',
+    'package-registry-utils.js',
     'token-source.js',
     'bridge-token-source.js',
     'snapshot-token-source.js',

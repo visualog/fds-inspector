@@ -195,7 +195,7 @@
     const usesBadgeIndicator = indicator === 'badge';
     const badgeLabel = badgeFullCount
       ? [
-        `${BUTTON_META[key]?.title || key} ${badgeFullCount}개 위반 요소`,
+        `${BUTTON_META[key]?.title || key} ${badgeFullCount}개 검토 대상 요소`,
         scanScopeText,
       ].filter(Boolean).join(' · ')
       : '';
@@ -215,6 +215,9 @@
   }
 
   function countViolationsByFilter(scanData, filter) {
+    if (typeof scanData?.affectedElementCounts?.[filter] === 'number') {
+      return scanData.affectedElementCounts[filter];
+    }
     if (scanData?.counts && typeof scanData.counts[filter] === 'number') {
       return scanData.counts[filter];
     }

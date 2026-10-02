@@ -352,11 +352,11 @@ test('summary panel cards and lists render without borders', () => {
   assert.doesNotMatch(styleSource, /\.fds-list-item\.(danger|success|warning)(?:\.[^{\s]+)?\s*\{[^}]*border-color:/);
 });
 
-test('overlay keeps group rows focused on value and count', () => {
+test('overlay provides room for property, value and assessment in group rows', () => {
   const styleSource = fs.readFileSync(path.join(__dirname, 'overlay.css'), 'utf8');
 
   assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*grid-template-columns:\s*14px minmax\(0, 1fr\) max-content/);
-  assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*padding:\s*0 8px/);
+  assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*padding:\s*8px/);
   assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*column-gap:\s*4px/);
   assert.doesNotMatch(styleSource, /\.fds-list-group\s*\{[\s\S]*column-gap:\s*7px/);
   assert.match(styleSource, /\.fds-group-caret\s*\{[\s\S]*align-self:\s*center/);
@@ -371,8 +371,8 @@ test('overlay keeps group rows focused on value and count', () => {
   assert.match(styleSource, /\.fds-group-value\s*\{[\s\S]*text-overflow:\s*ellipsis/);
   assert.match(styleSource, /\.fds-group-value\s*\{[\s\S]*display:\s*inline-flex/);
   assert.match(styleSource, /\.fds-group-value\s*\{[\s\S]*align-items:\s*center/);
-  assert.doesNotMatch(styleSource, /\.fds-group-status\s*\{/);
-  assert.doesNotMatch(styleSource, /\.fds-group-chip\s*\{/);
+  assert.match(styleSource, /\.fds-group-status\s*\{/);
+  assert.match(styleSource, /\.fds-group-chip\s*\{/);
 });
 
 test('overlay keeps scrollbar gutters stable during panel focus changes', () => {
@@ -552,7 +552,7 @@ test('summary list uses natural height and only scrolls when the viewport constr
   const motionSource = fs.readFileSync(path.join(__dirname, 'content-motion.js'), 'utf8');
 
   assert.doesNotMatch(contentSource, /SUMMARY_LIST_SCROLL_ITEM_THRESHOLD/);
-  assert.match(contentSource, /<div class="fds-summary-list is-scrollable" role="list" aria-label="위반 목록">/);
+  assert.match(contentSource, /<div class="fds-summary-list is-scrollable" role="list" aria-label="검토 대상 목록">/);
   assert.match(styleSource, /\.fds-summary-card\s*\{[\s\S]*max-height:\s*calc\(100vh - var\(--fds-summary-panel-bottom,\s*88px\) - 12px\)/);
   assert.match(styleSource, /\.fds-summary-section\s*\{[\s\S]*flex:\s*1 1 auto/);
   assert.match(styleSource, /\.fds-summary-list\s*\{[\s\S]*max-height:\s*none/);
@@ -587,8 +587,8 @@ test('summary panel reserves toolbar clearance so short collapsed lists are not 
   assert.match(styleSource, /\.fds-summary-card-row\s*\{[\s\S]*gap:\s*4px/);
   assert.match(styleSource, /\.fds-stat-box\s*\{[\s\S]*height:\s*64px/);
   assert.match(styleSource, /\.fds-stat-box\s*\{[\s\S]*flex:\s*0 0 calc\(\(100% - 4px\) \/ 2\)/);
-  assert.match(styleSource, /\.fds-summary-list\s*\{[\s\S]*gap:\s*2px/);
-  assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*min-height:\s*32px/);
+  assert.match(styleSource, /\.fds-summary-list\s*\{[\s\S]*gap:\s*var\(--spacing-2, 8px\)/);
+  assert.match(styleSource, /\.fds-list-group\s*\{[\s\S]*min-height:\s*48px/);
   assert.match(styleSource, /\.fds-list-group-details\s*\{[\s\S]*gap:\s*2px/);
   assert.match(styleSource, /--fds-toolbar-bottom:\s*24px/);
   assert.match(styleSource, /--fds-summary-toolbar-gap:\s*16px/);
@@ -701,7 +701,7 @@ test('inspector hover card uses the violation type as its title', () => {
   const styleSource = fs.readFileSync(path.join(__dirname, 'overlay.css'), 'utf8');
 
   assert.match(contentSource, /function\s+getInspectorCardTitle\(issueEntries = \[\]\)/);
-  assert.match(contentSource, /return `\$\{parsedIssue\.chip \|\| '속성'\} 위반`/);
+  assert.match(contentSource, /assessment\?\.status === 'review' \? '확인' : '위반'/);
   assert.match(contentSource, /return `\$\{categoryLabel\} 위반 \$\{issueEntries\.length\}건`/);
   assert.match(contentSource, /const displayEntries = getUniqueInspectorIssueEntries\(issueEntries\)/);
   assert.match(contentSource, /const cardTitle = getInspectorCardTitle\(displayEntries\)/);
@@ -851,7 +851,7 @@ test('summary rows and violation pins expose note state', () => {
   const styleSource = fs.readFileSync(path.join(__dirname, 'overlay.css'), 'utf8');
 
   assert.match(contentSource, /function\s+withViolationNoteState\(entry\)/);
-  assert.match(contentSource, /renderSummaryListItem\(withViolationNoteState\(item\)\)/);
+  assert.match(contentSource, /renderSummaryIssueGroup\(group,[\s\S]*?\.map\(withViolationNoteState\)/);
   assert.match(contentSource, /pin\.classList\.toggle\('has-note'/);
   assert.match(styleSource, /\.fds-list-item\.has-note/);
   assert.match(styleSource, /\.fds-issue-pin\.has-note/);

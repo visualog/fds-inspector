@@ -232,6 +232,10 @@
       missingColorPatternCount = 0,
       primitiveColorPatternCount = 0,
       activeSummaryTone = 'danger',
+      hasSourceReview = false,
+      assessmentMode = false,
+      recommendationCount = 0,
+      reviewCount = 0,
     }) {
       if (!hasViolations) {
         return [{
@@ -246,7 +250,7 @@
       return [
         {
           tone: 'danger',
-          label: '미등록',
+          label: assessmentMode ? 'FDS 불일치 후보' : '미등록',
           value: missingColorPatternCount,
           caption: `영향 ${formatDisplayCount(missingColorCount)}개 요소`,
           icon: 'triangle-alert',
@@ -255,9 +259,11 @@
         },
         {
           tone: 'warning',
-          label: '원시값',
+          label: assessmentMode ? '권장·확인 사항' : hasSourceReview ? '토큰 검토' : '원시값',
           value: primitiveColorPatternCount,
-          caption: `영향 ${formatDisplayCount(primitiveColorCount)}개 요소`,
+          caption: assessmentMode
+            ? `전환 권장 ${formatDisplayCount(recommendationCount)}건 · 확인 필요 ${formatDisplayCount(reviewCount)}건`
+            : `영향 ${formatDisplayCount(primitiveColorCount)}개 요소`,
           icon: 'circle-alert',
           isToggle: true,
           isActive: activeSummaryTone === 'warning',
@@ -361,12 +367,31 @@
       const tooltipLabel = expanded ? '목록 접기' : '목록 펼치기';
 
       return `
-    <button class="fds-list-group ${escapeHtml(tone)}${expanded ? ' is-expanded' : ''}" type="button" role="listitem" data-group-key="${escapeHtml(groupKey)}" aria-expanded="${expanded ? 'true' : 'false'}" data-tooltip="${escapeHtml(tooltipLabel)}" aria-label="${escapeHtml(groupLabel)}">
+    <button id="fds-group-${escapeHtml(encodeURIComponent(groupKey))}" class="fds-list-group ${escapeHtml(tone)}${expanded ? ' is-expanded' : ''}" type="button" role="listitem" data-group-key="${escapeHtml(groupKey)}" aria-expanded="${expanded ? 'true' : 'false'}"${expanded ? ` aria-controls="fds-group-${escapeHtml(encodeURIComponent(groupKey))}-details"` : ''} data-tooltip="${escapeHtml(tooltipLabel)}" aria-label="${escapeHtml(groupLabel)}">
       <span class="fds-group-caret" aria-hidden="true">${renderLucideChevronIcon(expanded ? 'chevron-down' : 'chevron-right')}</span>
-      <span class="fds-group-value">${escapeHtml(value)}</span>
+      <span class="fds-group-value"><span class="fds-group-heading"><span class="fds-group-chip">${escapeHtml(chip)}</span><span class="fds-group-number">${escapeHtml(value)}</span></span>${group?.entries?.some(entry => entry.metadata?.assessment) ? `<span class="fds-group-status">${escapeHtml(tag)}</span>` : ''}</span>
       <span class="fds-group-count" aria-label="${escapeHtml(countLabel)}">${escapeHtml(displayCount)}</span>
     </button>
   `;
+    }
+
+    function renderSummaryIssueGroup(group, detailEntries = []) {
+      const headerId = `fds-group-${encodeURIComponent(group?.key || '')}`;
+      return `<div class="fds-issue-group${group?.expanded ? ' is-expanded' : ''}">
+        ${renderSummaryGroupItem(group)}
+        ${group?.expanded ? `<div id="${escapeHtml(headerId)}-details" class="fds-list-group-details" role="group" aria-labelledby="${escapeHtml(headerId)}">${detailEntries.map(renderSummaryListItem).join('')}</div>` : ''}
+      </div>`;
+    }
+
+    function renderAssessmentGuide() {
+      return `<details class="fds-assessment-guide">
+        <summary>검사 결과 안내</summary>
+        <div class="fds-assessment-guide-body">
+          <p><strong>토큰 전환 권장</strong><br>FDS에 있는 값을 직접 지정한 것으로 확인됨.</p>
+          <p><strong>출처 확인 필요</strong><br>변수·계산식 등의 적용 방식을 아직 확정하지 못함.</p>
+          <p>확인 필요는 바로 토큰으로 바꾸라는 뜻은 아닙니다. 적용된 CSS를 먼저 확인하세요. 유동 레이아웃은 고정 토큰으로 일괄 전환하지 마세요.</p>
+        </div>
+      </details>`;
     }
 
     return {
@@ -381,6 +406,8 @@
       renderSummaryTabBar,
       renderSummaryMetricCard,
       renderSummaryGroupItem,
+      renderSummaryIssueGroup,
+      renderAssessmentGuide,
       renderSummaryListItem,
     };
   }

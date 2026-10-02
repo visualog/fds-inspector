@@ -3,11 +3,13 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 // Parse only static published CSS data. Never execute Storybook JavaScript.
+const decodeIdentifier = value => value.replace(/\\([\da-f]{1,6})\s?|\\(.)/gi,
+  (_, hex, char) => hex ? String.fromCodePoint(parseInt(hex, 16)) : char);
 export function extractRegistry(css, index, baseUrl, cssUrl) {
   const variables = {};
   for (const match of css.matchAll(/:root\s*\{([^{}]*)\}/g)) {
-    for (const declaration of match[1].matchAll(/(--(?:color|spacing|radius|typography|font-family)[\w-]*)\s*:\s*([^;{}]+)/g)) {
-      variables[declaration[1]] = declaration[2].trim();
+    for (const declaration of match[1].matchAll(/(--(?:color|spacing|radius|typography|font-family)(?:\\.|[\w.-])*)\s*:\s*([^;{}]+)/g)) {
+      variables[decodeIdentifier(declaration[1])] = declaration[2].trim();
     }
   }
   const utilities = {};
@@ -15,15 +17,15 @@ export function extractRegistry(css, index, baseUrl, cssUrl) {
     // Complex, conditional and pseudo selectors are checked through page CSS,
     // rather than treating their class name as unconditional evidence.
     const selector = match[1].trim();
-    if (!/^\.[\w-]+$/.test(selector)) continue;
+    if (!/^\.(?:\\.|[\w-])+$/.test(selector)) continue;
     const declarations = {};
     for (const declaration of match[2].matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)) {
-      const references = [...declaration[2].matchAll(/var\(\s*(--[\w-]+)/g)].map(item => item[1]);
+      const references = [...declaration[2].matchAll(/var\(\s*(--(?:\\.|[^\s,)])+)/g)].map(item => decodeIdentifier(item[1]));
       if (references.length && references.every(name => Object.hasOwn(variables, name))) {
         declarations[declaration[1]] = declaration[2].trim();
       }
     }
-    if (Object.keys(declarations).length) utilities[selector.slice(1)] = declarations;
+    if (Object.keys(declarations).length) utilities[decodeIdentifier(selector.slice(1))] = declarations;
   }
   const docs = Object.fromEntries(Object.values(index.entries || {})
     .filter(entry => entry.type === 'docs')

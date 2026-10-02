@@ -3,6 +3,14 @@ const assert = require('node:assert/strict');
 
 const { createContentTokenSuggestions } = require('./content-token-suggestions.js');
 
+test('review-only spacing never recommends replacing computed layout with a fixed token', () => {
+  const suggestions = createSuggestions();
+  for (const reason of ['fluid-layout', 'declaration-unavailable', 'expression-unresolved']) {
+    assert.deepEqual(suggestions.getSuggestedTokensForIssue({ category: 'spacing', message: '왼쪽 마진 8px (원시값 직접 사용: spacing.2)',
+      metadata: { assessment: { status: 'review', reason } } }), []);
+  }
+});
+
 function createSuggestions(overrides = {}) {
   return createContentTokenSuggestions({
     getActiveInspectorSpecs: () => ({
